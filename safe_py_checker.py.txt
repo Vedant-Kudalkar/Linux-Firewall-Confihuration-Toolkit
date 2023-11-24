@@ -1,0 +1,77 @@
+import subprocess
+import multiprocessing
+
+# Function to add an IP address
+def add_ip(interface, ip_address, netmask):
+    command = f"sudo ip addr add {ip_address}/{netmask} dev {interface}"
+    subprocess.run(command, shell=True)
+
+# Function to remove an IP address
+def remove_ip(interface, ip_address, netmask):
+    command = f"sudo ip addr del {ip_address}/{netmask} dev {interface}"
+    subprocess.run(command, shell=True)
+
+# Function to check if an IP address is safe
+def is_ip_safe(ip_address, safe_ips):
+    return ip_address in safe_ips
+
+# Function to show a pop-up message
+def show_message(message):
+    subprocess.run(["zenity", "--info", "--text", message])
+
+# Get safe IP addresses from the user
+safe_ips = []
+while True:
+    ip = input("Enter a safe IP address (or press Enter to finish): ")
+    if not ip:
+        break
+    safe_ips.append(ip)
+
+if _name_ == '_main_':
+    while True:
+        print("1. Connect IP Address")
+        print("2. Disconnect IP Address")
+        print("3. List IP Addresses")
+        print("4. Quit")
+
+        choice = input("Enter your choice: ")
+
+        if choice == "1":
+            interface = input("Enter the interface name: ")
+            ip_address = input("Enter the IP address: ")
+            netmask = input("Enter the netmask: ")
+
+            # Create a new process to add the IP address
+            p = multiprocessing.Process(target=add_ip, args=(interface, ip_address, netmask))
+            p.start()
+            p.join()  # Wait for the process to finish
+
+            # Check if the added IP address is safe
+            if is_ip_safe(ip_address, safe_ips):
+                show_message("This IP address is SAFE.")
+            else:
+                show_message("This IP address is UNSAFE.")
+
+        elif choice == "2":
+            interface = input("Enter the interface name: ")
+            ip_address = input("Enter the IP address to remove: ")
+            netmask = input("Enter the netmask: ")
+
+            # Create a new process to remove the IP address
+            p = multiprocessing.Process(target=remove_ip, args=(interface, ip_address, netmask))
+            p.start()
+            p.join()  # Wait for the process to finish
+
+            # Show a pop-up message to indicate that the IP address was removed
+            show_message("IP address removed.")
+
+        elif choice == "3":
+            interface = input("Enter the interface name: ")
+            list_ip_command = f"ip addr show dev {interface}"
+
+            # Use subprocess to list IP addresses
+            result = subprocess.run(list_ip_command, shell=True, text=True, stdout=subprocess.PIPE)
+            show_message(result.stdout)
+
+        elif choice == "4":
+            break
